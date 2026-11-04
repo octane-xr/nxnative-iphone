@@ -1,0 +1,30 @@
+name: build-ios
+# Sin juego no se puede generar un IPA: nxnative lo construye a partir de NSP/XCI + prod.keys del usuario.
+# Este workflow prepara y valida todo lo posible SIN contenido de Nintendo (herramientas, dependencias, script).
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seleccionar Xcode 27.2
+        run: sudo xcode-select -s /Applications/Xcode_27.2.app && xcodebuild -version
+      - name: Metal toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
+      - name: Clonar nxnative
+        run: git clone --depth 1 https://github.com/seedds/nxnative.git "$RUNNER_TEMP/nxnative"
+      - name: Dependencias (según README de nxnative)
+        run: |
+          brew install xcodegen zstd glslang
+          brew install --cask dotnet-sdk || true
+          python3 -m pip install --break-system-packages lz4 "capstone>=5,<6" fonttools nsz zbic
+      - name: Validar script de empaquetado
+        run: python3 "$RUNNER_TEMP/nxnative/scripts/build_ipa_from_nsp.py" --help
+      - name: Compilar shader Metal de prueba
+        run: |
+          echo 'kernel void k(device float* a [[buffer(0)]], uint i [[thread_position_in_grid]]) { a[i] *= 2.0; }' > t.metal
+          xcrun -sdk iphoneos metal -c t.metal -o t.air && echo "Metal iOS OK"

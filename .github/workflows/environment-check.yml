@@ -1,0 +1,23 @@
+name: environment-check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    # Runner estándar gratuito para repos públicos (preview de Xcode 27, trae Xcode 27.2).
+    # NO usar etiquetas -xlarge / -large: son de pago.
+    runs-on: xcode-27
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clonar nxnative (oficial)
+        run: git clone --depth 1 https://github.com/seedds/nxnative.git "$RUNNER_TEMP/nxnative"
+      - name: Informe
+        run: ./scripts/env_report.sh "$RUNNER_TEMP/nxnative" report.md
+      - name: Resumen
+        run: cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compat-report
+          path: report.md

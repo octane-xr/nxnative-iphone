@@ -1,0 +1,15 @@
+# Nunca subir contenido propietario ni credenciales
+*.nsp
+*.xci
+*.nsz
+*.xcz
+*.nup
+*.keys
+prod.keys
+title.keys
+*.ipa
+*.p12
+*.mobileprovision
+*.cer
+*.pem
+.env
