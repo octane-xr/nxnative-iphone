@@ -1,0 +1,19 @@
+name: disk-check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disk:
+    runs-on: xcode-27
+    timeout-minutes: 15
+    steps:
+      - name: Espacio real
+        run: |
+          df -h
+          echo "--- Xcodes ---"; du -sh /Applications/Xcode*.app 2>/dev/null
+          echo "--- Simuladores/otros ---"; du -sh /Library/Developer/CoreSimulator 2>/dev/null; du -sh ~/Library/Android 2>/dev/null; du -sh /Users/runner/hostedtoolcache 2>/dev/null
+      - name: Liberar (solo Xcodes que no usamos) y medir
+        run: |
+          sudo rm -rf /Applications/Xcode_27.0*.app /Applications/Xcode_27.app /Applications/Xcode_27.1*.app
+          df -h /System/Volumes/Data
