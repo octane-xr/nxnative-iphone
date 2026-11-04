@@ -1,0 +1,52 @@
+name: build-game
+# Compila un juego del usuario (descargado por túnel temporal, nunca guardado en el repo).
+# Secretos requeridos: DUMP_URL (URL temporal con token), ARTIFACT_PASSPHRASE (cifra el IPA).
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: xcode-27
+    timeout-minutes: 330
+    env:
+      DUMP_URL: ${{ secrets.DUMP_URL }}
+      PASS: ${{ secrets.ARTIFACT_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Liberar disco
+        run: |
+          sudo rm -rf /Applications/Xcode_27.0*.app /Applications/Xcode_27.app /Applications/Xcode_27.1*.app
+          rm -rf ~/Library/Android
+          df -h /System/Volumes/Data
+      - name: Xcode 27.2 y Metal toolchain
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.2.app && xcodebuild -version
+          xcodebuild -downloadComponent MetalToolchain
+      - name: Dependencias
+        run: |
+          brew install xcodegen zstd glslang
+          brew install --cask dotnet-sdk || true
+          python3 -m pip install --break-system-packages lz4 "capstone>=5,<6" fonttools nsz zbic
+      - name: Clonar nxnative
+        run: git clone --depth 1 https://github.com/seedds/nxnative.git "$HOME/nxnative" && git -C "$HOME/nxnative" log -1 --format=%H
+      - name: Descargar dump (túnel)
+        run: |
+          mkdir -p "$HOME/dump"
+          curl -fsS --retry 3 "$DUMP_URL" | tar -x -C "$HOME/dump"
+          ls "$HOME/dump"; du -sh "$HOME/dump"; df -h /System/Volumes/Data
+      - name: Construir IPA
+        run: |
+          D=$(ls -d "$HOME"/dump/*/ | head -1)
+          mkdir -p "$HOME/out"
+          python3 "$HOME/nxnative/scripts/build_ipa_from_nsp.py" "$D" --romfs separate -o "$HOME/out/game.ipa" --progress lines
+      - name: Cifrar IPA
+        run: |
+          ls -la "$HOME/out"
+          openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:PASS -in "$HOME/out/game.ipa" -out "$HOME/out/game.ipa.enc"
+          ls -la "$HOME/out"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: game-ipa-encrypted
+          path: ~/out/game.ipa.enc
+          retention-days: 3
