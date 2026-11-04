@@ -12,11 +12,16 @@ Infraestructura para probar [nxnative](https://github.com/seedds/nxnative) en iP
 | Xcode 27.1 por defecto; 27.2 instalado y seleccionable | ✅ | runs 41888723738 / 41888891919 |
 | SDK iOS 27.1 y compilador Metal (32023.921) | ✅ | informe |
 | `build-ios` (preparación: Xcode 27.2, Metal toolchain, dependencias, `--help` del script, shader Metal de prueba) | ✅ | run 41888891919 |
-| **IPA de un juego** | ⛔ no generado | nxnative requiere TU juego (NSP/XCI + `prod.keys`) o un `.nup`; no hay launcher sin juego |
-| Instalación en iPhone | ❓ no probada | requiere tu iPhone y tu Apple ID |
+| **IPA de un juego (Donkey Kong Bananza, dump propio, Switch 2)** | ✅ generado (2,1 GB, zip válido) | run 41894405155: 7/7 etapas de nxnative, 23.638 shaders, 262 archivos compilados |
+| Datos del juego (`RomFS.img`) en el iPhone | ❌ pendiente | el IPA se hizo con `--romfs separate`; la imagen quedó en el runner y se perdió |
+| Firma e instalación en iPhone | ❓ no probada | requiere tu iPhone y tu Apple ID |
+| Que el juego arranque en A17 Pro | ❓ no probado | nxnative: Switch 2 en iPhone "untested" |
 | Switch 2 en iPhone | ❓ no confirmado | ver `docs/SWITCH2_COMPATIBILITY.md` |
 
-## Bloqueador real
-nxnative **no** produce una app genérica: convierte un juego que tú posees en un IPA sin firmar. Un build de 30–60 min de un juego grande (≈2× su tamaño + 10 GB) no cabe en un runner gratuito de ~35 GB y subir juegos/claves a GitHub no es aceptable. Por eso la compilación real del juego debe ser local (Mac) o, desde Linux, queda **sin resolver**.
+## Cómo se logró el IPA sin Mac
+El dump (19 GB) se sirvió desde un túnel temporal con token (`curl | tar` en el runner), `build-game.yml` compiló en `xcode-27` y el IPA salió cifrado como artefacto. El túnel y los secretos se borraron después. Ver `docs/GITHUB_ACTIONS.md`.
+
+## Pendiente
+Generar `RomFS.img` (herramientas Python de nxnative; no probado en Linux), firmar/instalar el IPA y copiar la imagen al iPhone. El script oficial `push_romfs.sh` usa `xcrun devicectl` (solo macOS), así que desde Linux habría que buscar otra vía.
 
 Documentación: [Linux](docs/LINUX_SETUP.md) · [Actions](docs/GITHUB_ACTIONS.md) · [Instalación iOS](docs/IOS_INSTALLATION.md) · [Switch 2](docs/SWITCH2_COMPATIBILITY.md) · [Problemas](docs/TROUBLESHOOTING.md)
